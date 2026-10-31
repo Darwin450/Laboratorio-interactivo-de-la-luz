@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Laboratorio de la Luz — STEM Lab</title>
+<meta name="description" content="Laboratorio virtual interactivo de óptica para 10mo y 11mo grado. Colegio Cristiano Jesús el Buen Pastor.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════ RESET & VARIABLES ═══════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c14;--bg2:#0d1220;--sf:rgba(16,22,36,0.75);--sf-solid:#101624;
+  --tx:#e4eaf4;--mu:#7a8ba3;--bd:rgba(100,140,200,0.15);
+  --ac:#3b82f6;--ac2:#60a5fa;--ac-rgb:59,130,246;--ac-glow:rgba(59,130,246,0.25);
+  --on:#fff;--ok:#22c55e;--no:#ef4444;
+  --glass:rgba(20,30,55,0.55);--glass-border:rgba(100,160,255,0.12);
+  --radius:14px;--radius-sm:10px;
+  font-size:15px;
+}
+html{scroll-behavior:smooth}
+body{
+  min-height:100vh;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(59,130,246,0.04) 39px,rgba(59,130,246,0.04) 40px),
+    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(59,130,246,0.04) 39px,rgba(59,130,246,0.04) 40px),
+    linear-gradient(160deg,#060a12 0%,#0c1220 40%,#0f1628 100%);
+  background-attachment:fixed;
+  color:var(--tx);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ═══════════ TYPOGRAPHY ═══════════ */
+.font-display{font-family:'Space Grotesk','Inter',sans-serif}
+.font-mono{font-family:'JetBrains Mono',monospace}
+
+/* ═══════════ LAYOUT ═══════════ */
+.app{max-width:1080px;margin:0 auto;padding:0 20px 48px}
+header{padding:32px 0 20px;text-align:center;position:relative}
+header::after{content:'';display:block;width:120px;height:3px;background:linear-gradient(90deg,transparent,var(--ac),transparent);margin:16px auto 0;border-radius:2px}
+h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(26px,5vw,36px);font-weight:700;letter-spacing:-0.5px;
+  background:linear-gradient(135deg,#e4eaf4 0%,#60a5fa 50%,#a78bfa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.badge{display:inline-block;background:linear-gradient(135deg,var(--ac),#6366f1);color:#fff;font-family:'Space Grotesk',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:10px}
+.sub{color:var(--mu);font-size:13px;font-weight:500;letter-spacing:0.3px}
+
+/* ═══════════ NAV ═══════════ */
+nav{display:flex;gap:6px;overflow-x:auto;padding:16px 0;scrollbar-width:none;-ms-overflow-style:none;scroll-snap-type:x mandatory}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:none;scroll-snap-align:start;display:flex;align-items:center;gap:7px;
+  border:1px solid var(--glass-border);background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:var(--mu);padding:10px 16px;border-radius:var(--radius-sm);
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;cursor:pointer;
+  transition:all .3s ease;white-space:nowrap}
+nav button:hover{color:var(--tx);border-color:rgba(100,160,255,0.3);background:rgba(59,130,246,0.08)}
+nav button.on{background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(99,102,241,0.15));
+  border-color:rgba(59,130,246,0.4);color:var(--on);box-shadow:0 0 20px var(--ac-glow),inset 0 1px 0 rgba(255,255,255,0.08)}
+nav button svg{width:16px;height:16px;flex:none}
+
+/* ═══════════ CARDS & GLASS ═══════════ */
+.card{background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:var(--radius);overflow:hidden;
+  box-shadow:0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04);
+  transition:box-shadow .3s}
+.station-desc{padding:14px 18px;font-size:13.5px;color:var(--mu);line-height:1.65;border-bottom:1px solid var(--bd)}
+.station-desc b{color:var(--tx);font-weight:600}
+
+/* ═══════════ CANVAS ═══════════ */
+.canvas-wrap{position:relative;background:#080c14;border-bottom:1px solid var(--bd)}
+canvas{display:block;width:100%;height:auto}
+
+/* ═══════════ STATION BODY GRID ═══════════ */
+.station-body{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:700px){
+  .station-body{grid-template-columns:280px 1fr}
+  .controls-panel{border-right:1px solid var(--bd);border-bottom:none}
+}
+
+/* ═══════════ CONTROLS ═══════════ */
+.controls-panel{padding:18px;display:flex;flex-direction:column;gap:16px;border-bottom:1px solid var(--bd)}
+.control-group{display:flex;flex-direction:column;gap:4px}
+.control-label{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center}
+.control-value{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--ac2);background:rgba(59,130,246,0.1);padding:2px 8px;border-radius:6px}
+
+/* Custom range */
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;outline:none;cursor:pointer;margin:8px 0 2px;
+  background:linear-gradient(90deg,rgba(59,130,246,0.3),rgba(59,130,246,0.15))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(135deg,var(--ac),#6366f1);border:3px solid var(--bg);cursor:pointer;
+  box-shadow:0 0 10px var(--ac-glow),0 2px 6px rgba(0,0,0,0.4);transition:transform .15s,box-shadow .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);box-shadow:0 0 16px var(--ac-glow),0 2px 8px rgba(0,0,0,0.5)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(135deg,var(--ac),#6366f1);border:3px solid var(--bg);cursor:pointer;
+  box-shadow:0 0 10px var(--ac-glow)}
+input[type=range].spectral{background:linear-gradient(90deg,#8800ff,#0044ff,#00ccff,#00ff44,#ffee00,#ff8800,#ff0000)!important}
+
+/* Segment buttons */
+.seg{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.seg button{border:1px solid var(--glass-border);background:rgba(255,255,255,0.03);color:var(--mu);
+  padding:7px 13px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;transition:all .25s}
+.seg button:hover{border-color:rgba(100,160,255,0.3);color:var(--tx);background:rgba(59,130,246,0.06)}
+.seg button.on{border-color:var(--ac);color:var(--ac2);font-weight:700;background:rgba(59,130,246,0.12);box-shadow:0 0 12px rgba(59,130,246,0.15)}
+
+/* ═══════════ DASHBOARD ═══════════ */
+.dashboard-panel{padding:18px}
+.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:12px}
+.data-card{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.12);border-radius:var(--radius-sm);
+  padding:12px 10px;text-align:center;transition:all .25s}
+.data-card:hover{border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.1)}
+.data-card .data-icon{font-size:16px;margin-bottom:4px;opacity:0.7}
+.data-card .data-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--ac2);line-height:1.2}
+.data-card .data-unit{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mu);font-weight:400;margin-left:2px}
+.data-card .data-lbl{font-size:10.5px;color:var(--mu);text-transform:uppercase;letter-spacing:0.6px;margin-top:4px;font-weight:600}
+.data-card .color-swatch{display:inline-block;width:18px;height:18px;border-radius:5px;vertical-align:-3px;margin-right:6px;border:1px solid rgba(255,255,255,0.15)}
+.explanation{font-size:13.5px;color:var(--mu);line-height:1.65;padding:12px 0 0}
+.explanation b{color:var(--ac2)}
+
+/* ═══════════ OBSERVATION ═══════════ */
+.obs-panel{padding:16px 18px;border-top:1px solid var(--bd)}
+.obs-panel label{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px}
+textarea{width:100%;background:rgba(0,0,0,0.25);color:var(--tx);border:1px solid var(--glass-border);border-radius:var(--radius-sm);
+  padding:10px 12px;font-family:'Inter',sans-serif;font-size:14px;margin-top:8px;resize:vertical;transition:border-color .25s;min-height:80px}
+textarea:focus{outline:none;border-color:rgba(59,130,246,0.4);box-shadow:0 0 12px rgba(59,130,246,0.1)}
+textarea::placeholder{color:rgba(122,139,163,0.5)}
+
+/* ═══════════ QUIZ ═══════════ */
+.quiz-progress{display:flex;gap:4px;padding:16px 18px;border-bottom:1px solid var(--bd)}
+.quiz-pip{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);transition:background .4s}
+.quiz-pip.correct{background:var(--ok)}
+.quiz-pip.wrong{background:var(--no)}
+.quiz-pip.current{background:rgba(59,130,246,0.3)}
+.qi{padding:16px 18px;border-bottom:1px solid var(--bd);transition:background .3s}
+.qi:hover{background:rgba(255,255,255,0.015)}
+.qi .q-num{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.qi .q-text{font-weight:600;margin-bottom:8px;line-height:1.5}
+.qi .q-explain{color:var(--mu);font-size:13px;margin-top:8px;padding:8px 12px;background:rgba(59,130,246,0.06);border-radius:8px;border-left:3px solid var(--ac);display:none}
+.qi .q-explain.show{display:block;animation:fadeIn .3s ease}
+.seg .ok{border-color:var(--ok)!important;color:var(--ok)!important;background:rgba(34,197,94,0.1)!important}
+.seg .no{border-color:var(--no)!important;color:var(--no)!important;background:rgba(239,68,68,0.1)!important}
+.score-bar{padding:16px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.score-value{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--ac2)}
+.score-label{font-size:13px;color:var(--mu)}
+
+/* Submit section */
+.submit-section{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+@media(max-width:600px){.submit-section{grid-template-columns:1fr}}
+.submit-section label{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.5px}
+.submit-section input,.submit-section select{width:100%;background:rgba(0,0,0,0.25);color:var(--tx);border:1px solid var(--glass-border);
+  border-radius:8px;padding:10px 12px;font-family:'Inter',sans-serif;font-size:14px;margin-top:6px;transition:border-color .25s}
+.submit-section input:focus,.submit-section select:focus{outline:none;border-color:rgba(59,130,246,0.4)}
+.submit-section select{cursor:pointer}
+.submit-section select option{background:var(--sf-solid)}
+.btn-primary{grid-column:1/-1;background:linear-gradient(135deg,var(--ac),#6366f1);color:#fff;border:none;border-radius:var(--radius-sm);
+  padding:12px 20px;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .25s;box-shadow:0 4px 16px rgba(59,130,246,0.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(59,130,246,0.4)}
+.btn-primary:disabled{opacity:.5;transform:none;cursor:not-allowed}
+.submit-msg{grid-column:1/-1;font-size:13px;color:var(--mu);min-height:20px}
+
+/* ═══════════ CONFETTI ═══════════ */
+.confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti-piece{position:absolute;width:10px;height:10px;top:-20px;border-radius:2px;animation:confetti-fall 3s ease-in forwards}
+@keyframes confetti-fall{0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)}100%{opacity:0;transform:translateY(100vh) rotate(1080deg) scale(0.3)}}
+
+/* ═══════════ FOOTER ═══════════ */
+footer{margin-top:28px;text-align:center;padding:16px 0;border-top:1px solid var(--bd)}
+footer .sub{font-size:12px}
+
+/* ═══════════ ANIMATIONS ═══════════ */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+section{animation:fadeIn .35s ease}
+.station-in{animation:fadeIn .4s ease}
+
+/* ═══════════ RESPONSIVE ═══════════ */
+@media(max-width:699px){
+  .app{padding:0 12px 36px}
+  .dashboard-grid{grid-template-columns:repeat(2,1fr)}
+  .data-card .data-val{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ═══════════ PRINT / PDF ═══════════ */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  body{background:#fff!important;color:#111!important;font-size:12px}
+  .app{max-width:100%;padding:0}
+  nav,footer,.canvas-wrap,.controls-panel,.obs-panel,.seg,.submit-section,.quiz-progress,
+  .btn-primary,textarea,input,select,button,.confetti-container,.no-print{display:none!important}
+  .card{background:#fff!important;border:1px solid #ddd!important;box-shadow:none!important;backdrop-filter:none!important;break-inside:avoid;margin-bottom:12px}
+  .station-desc,.qi,.dashboard-panel,.score-bar{border-color:#ddd!important}
+  h1{background:none!important;-webkit-text-fill-color:#1a1a1a!important;font-size:22px!important}
+  .badge{background:#3b82f6!important;-webkit-print-color-adjust:exact}
+  .data-card{background:#f0f4ff!important;border-color:#c8d6f0!important}
+  .data-card .data-val{color:#1e40af!important}
+  .data-card .data-lbl,.explanation,.qi .q-explain,.score-label,.sub{color:#555!important}
+  .qi .q-explain.show{display:block!important}
+  .print-only{display:block!important}
+  section[hidden]{display:none!important}
+  .print-header{display:block!important;text-align:center;margin-bottom:16px;padding:12px;border-bottom:2px solid #3b82f6}
+  .print-header h2{color:#1e40af;font-size:20px;margin-bottom:4px}
+  .print-observations{display:block!important;padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0}
+  .print-observations h3{color:#1e40af;font-size:14px;margin-bottom:6px}
+  .print-observations p{color:#333;font-size:12px;margin:4px 0}
+}
+.print-only,.print-header,.print-observations{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="badge">🔬 STEM Lab</div>
+    <h1>Laboratorio de la Luz</h1>
+    <div class="sub">Física · 10mo y 11mo · Colegio Cristiano Jesús el Buen Pastor</div>
+  </header>
+  <nav id="nav"></nav>
+  <main id="m"></main>
+  <footer><div class="sub">Laboratorio interactivo de óptica · Diseño STEM</div></footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   LABORATORIO DE LA LUZ — STEM REDESIGN
+   ═══════════════════════════════════════════════ */
+
+const $=s=>document.querySelector(s),R=Math.PI/180,TAU=Math.PI*2,
+      sin=Math.sin,cos=Math.cos,as=Math.asin,sqrt=Math.sqrt,min=Math.min,max=Math.max,abs=Math.abs,
+      clamp=(v,a,b)=>min(max(v,a),b);
+
+// ─── Wavelength → RGB ───
+function rgb(l){let r=0,g=0,b=0;
+  if(l<440){r=(440-l)/60;b=1}else if(l<490){g=(l-440)/50;b=1}else if(l<510){g=1;b=(510-l)/20}
+  else if(l<580){r=(l-510)/70;g=1}else if(l<645){r=1;g=(645-l)/65}else r=1;
+  const f=l<420?.3+.7*(l-380)/40:l>700?.3+.7*(750-l)/50:1;
+  return[r,g,b].map(x=>Math.round(255*Math.pow(x*f,.8)))}
+
+// ─── Draw a glowing beam ───
+function beam(c,p,col,w,a=1){
+  c.save();c.globalCompositeOperation='lighter';c.lineCap='round';
+  [[w*7,.04],[w*3.5,.12],[w,1]].forEach(([lw,al])=>{
+    c.strokeStyle=`rgba(${col},${al*a})`;c.lineWidth=lw;
+    c.beginPath();c.moveTo(...p[0]);p.slice(1).forEach(q=>c.lineTo(...q));c.stroke()});
+  c.restore()}
+
+// ─── Backgrounds ───
+function bgDark(c,W=800,H=440){
+  const g=c.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#080c16');g.addColorStop(1,'#0e1424');c.fillStyle=g;c.fillRect(0,0,W,H)}
+
+function grid(c,W=800,H=440,sp=40,op=0.04){
+  c.strokeStyle=`rgba(80,140,240,${op})`;c.lineWidth=0.5;
+  for(let x=0;x<=W;x+=sp){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke()}
+  for(let y=0;y<=H;y+=sp){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke()}}
+
+function bench3D(c,y,W=800,H=440){
+  const g=c.createLinearGradient(0,y,0,H);
+  g.addColorStop(0,'#3d2e22');g.addColorStop(.08,'#2a1f17');g.addColorStop(.5,'#1a130d');g.addColorStop(1,'#0e0a07');
+  c.fillStyle=g;c.fillRect(0,y,W,H-y);
+  c.fillStyle='rgba(255,230,200,.22)';c.fillRect(0,y,W,2);
+  c.fillStyle='rgba(0,0,0,.4)';c.fillRect(0,y+2,W,1);
+  for(let i=0;i<30;i++){const yy=y+6+(i*47%(H-y-10));
+    c.strokeStyle=`rgba(${i%2?'50,35,20':'80,55,30'},.12)`;c.lineWidth=.6+Math.random()*.4;
+    c.beginPath();c.moveTo(0,yy);c.bezierCurveTo(200+i*7,yy-2,500-i*5,yy+3,W,yy);c.stroke()}}
+
+// ─── Glow effect (animated) ───
+function drawGlow(c,x,y,r,col,t,intensity=1){
+  const pulse=.8+.2*sin(t*2.5);
+  c.save();c.globalCompositeOperation='lighter';
+  const g=c.createRadialGradient(x,y,0,x,y,r*pulse);
+  g.addColorStop(0,`rgba(${col},${.5*intensity})`);g.addColorStop(.5,`rgba(${col},${.15*intensity})`);g.addColorStop(1,`rgba(${col},0)`);
+  c.fillStyle=g;c.fillRect(x-r,y-r,r*2,r*2);c.restore()}
+
+// ─── Angle arc annotation ───
+function drawAngle(c,cx,cy,r,startDeg,endDeg,label,col='rgba(200,220,255,0.7)'){
+  c.save();c.strokeStyle=col;c.lineWidth=1.2;c.setLineDash([3,3]);
+  c.beginPath();c.arc(cx,cy,r,-endDeg*R,-startDeg*R);c.stroke();c.setLineDash([]);
+  const mid=(startDeg+endDeg)/2;
+  c.fillStyle=col;c.font='bold 11px "JetBrains Mono",monospace';c.textAlign='center';c.textBaseline='middle';
+  c.fillText(label,cx+(r+13)*cos(mid*R),cy-(r+13)*sin(mid*R));c.restore()}
+
+// ─── Label with backdrop ───
+function drawLabel(c,x,y,text,col='rgba(200,220,255,0.85)'){
+  c.save();c.font='600 11px "Space Grotesk",sans-serif';c.textAlign='center';
+  const m=c.measureText(text);const pw=m.width+10,ph=18;
+  c.fillStyle='rgba(0,0,0,0.5)';c.beginPath();
+  c.roundRect(x-pw/2,y-ph/2,pw,ph,4);c.fill();
+  c.fillStyle=col;c.fillText(text,x,y+4);c.restore()}
+
+/* ══════════════════════════════════════
+   STATION 1: COLOR DE LOS OBJETOS
+   ══════════════════════════════════════ */
+const LC=[[1,1,1],[1,0,0],[0,1,0],[0,0,1]],
+      OB=[[.86,.07,.07],[.08,.55,.14],[.1,.22,.85],[.93,.93,.9]],
+      OBN=['Manzana','Hoja','Camisa','Esfera'];
+const kc=(m,k)=>`rgb(${m.map(x=>clamp(Math.round(x*255*k+8),0,255))})`,
+      mix=v=>OB.map(o=>o.map((x,i)=>x*LC[v.L][i]));
+const nm=m=>{const M=max(...m);return M<.2?'negro':m.every(x=>x>.8)?'blanco':['rojo','verde','azul'][m.indexOf(M)]};
+
+function d1(c,v,t){
+  bgDark(c);grid(c);bench3D(c,380);
+  const M=mix(v),lc=LC[v.L].map(x=>x*255).join();
+
+  // ── Lamp ──
+  let g=c.createLinearGradient(360,0,440,0);
+  g.addColorStop(0,'#1a212b');g.addColorStop(.3,'#4a5563');g.addColorStop(.7,'#4a5563');g.addColorStop(1,'#1a212b');
+  c.fillStyle=g;c.fillRect(384,0,32,24);
+  c.beginPath();c.moveTo(360,52);c.lineTo(440,52);c.lineTo(416,24);c.lineTo(384,24);c.fill();
+  c.strokeStyle='rgba(255,255,255,0.15)';c.lineWidth=1;c.strokeRect(384,0,32,24);
+  c.fillStyle=`rgb(${lc})`;c.fillRect(364,50,72,4);
+  drawGlow(c,400,54,90,lc,t,.9);
+
+  // ── Light cone ──
+  g=c.createLinearGradient(0,54,0,380);g.addColorStop(0,`rgba(${lc},.22)`);g.addColorStop(1,`rgba(${lc},.03)`);
+  c.fillStyle=g;c.beginPath();c.moveTo(370,54);c.lineTo(430,54);c.lineTo(790,380);c.lineTo(10,380);c.fill();
+
+  // ── Shadows ──
+  const objX=[144,334,524,694];
+  objX.forEach(x=>{c.save();c.translate(x,382);c.scale(1,.12);
+    const sg=c.createRadialGradient(0,0,0,0,0,80);sg.addColorStop(0,'rgba(0,0,0,.7)');sg.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=sg;c.beginPath();c.arc(0,0,80,0,TAU);c.fill();c.restore()});
+
+  // ── 1. Apple (Phong 3D) ──
+  c.save();c.translate(144,305);
+  let ga=c.createRadialGradient(-18,-22,3,5,10,65);
+  ga.addColorStop(0,kc(M[0],1.8));ga.addColorStop(.35,kc(M[0],1.1));ga.addColorStop(.75,kc(M[0],.55));ga.addColorStop(1,kc(M[0],.12));
+  c.fillStyle=ga;c.beginPath();c.moveTo(0,-40);c.bezierCurveTo(48,-58,68,18,0,52);c.bezierCurveTo(-68,18,-48,-58,0,-40);c.fill();
+  // indentation
+  c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.ellipse(0,-40,16,7,0,0,TAU);c.fill();
+  // stem
+  c.fillStyle='#4a2e15';c.beginPath();c.moveTo(-2,-40);c.quadraticCurveTo(-10,-62,-5,-72);c.lineTo(-1,-72);c.quadraticCurveTo(-6,-56,2,-40);c.fill();
+  // specular highlight
+  let hs=c.createRadialGradient(-22,-14,1,-22,-14,18);
+  hs.addColorStop(0,`rgba(255,255,255,.55)`);hs.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=hs;c.beginPath();c.ellipse(-22,-14,10,22,-0.4,0,TAU);c.fill();
+  // rim light
+  c.strokeStyle=`rgba(${lc},.15)`;c.lineWidth=1.5;c.beginPath();c.arc(25,0,40,-1.2,0.8);c.stroke();
+  c.restore();
+  drawLabel(c,144,260,OBN[0]);
+
+  // ── 2. Leaf (3D with translucency) ──
+  c.save();c.translate(334,305);
+  let gh=c.createLinearGradient(-40,-50,40,50);
+  gh.addColorStop(0,kc(M[1],1.5));gh.addColorStop(.5,kc(M[1],.85));gh.addColorStop(1,kc(M[1],.2));
+  c.fillStyle=gh;c.beginPath();c.moveTo(-48,0);c.quadraticCurveTo(0,-68,48,0);c.quadraticCurveTo(0,68,-48,0);c.fill();
+  // upper half highlight (translucency)
+  c.fillStyle='rgba(255,255,255,.1)';c.beginPath();c.moveTo(-48,0);c.quadraticCurveTo(0,-68,48,0);c.lineTo(-48,0);c.fill();
+  // veins
+  c.strokeStyle=kc(M[1],.2);c.lineWidth=2;c.beginPath();c.moveTo(-48,0);c.lineTo(44,0);c.stroke();
+  c.lineWidth=1.2;for(let i=1;i<=5;i++){
+    c.beginPath();c.moveTo(-48+i*16,0);c.quadraticCurveTo(-38+i*16,-14,-24+i*16,-28);c.stroke();
+    c.beginPath();c.moveTo(-48+i*16,0);c.quadraticCurveTo(-38+i*16,14,-24+i*16,28);c.stroke()}
+  // specular
+  hs=c.createRadialGradient(-15,-18,1,-15,-18,14);hs.addColorStop(0,'rgba(255,255,255,.3)');hs.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=hs;c.beginPath();c.ellipse(-15,-18,10,14,0.3,0,TAU);c.fill();
+  c.restore();
+  drawLabel(c,334,248,OBN[1]);
+
+  // ── 3. Shirt (3D with folds) ──
+  c.save();c.translate(524,278);
+  let gc=c.createLinearGradient(-45,-45,45,65);
+  gc.addColorStop(0,kc(M[2],1.5));gc.addColorStop(.4,kc(M[2],.9));gc.addColorStop(1,kc(M[2],.15));
+  c.fillStyle=gc;
+  c.beginPath();c.moveTo(-25,-45);c.lineTo(-58,-18);c.quadraticCurveTo(-52,-6,-36,-2);c.lineTo(-25,-14);c.lineTo(-25,58);
+  c.lineTo(25,58);c.lineTo(25,-14);c.lineTo(36,-2);c.quadraticCurveTo(52,-6,58,-18);c.lineTo(25,-45);
+  c.lineTo(13,-32);c.lineTo(-13,-32);c.closePath();c.fill();
+  // collar V
+  c.fillStyle=kc(M[2],.25);c.beginPath();c.moveTo(-13,-32);c.lineTo(0,-14);c.lineTo(13,-32);c.closePath();c.fill();
+  // fold shadows
+  c.strokeStyle='rgba(0,0,0,.25)';c.lineWidth=1.8;
+  c.beginPath();c.moveTo(-25,-14);c.lineTo(-25,58);c.stroke();
+  c.beginPath();c.moveTo(25,-14);c.lineTo(25,58);c.stroke();
+  // fabric highlight
+  c.strokeStyle='rgba(255,255,255,.12)';c.lineWidth=1;
+  c.beginPath();c.moveTo(-15,2);c.quadraticCurveTo(0,16,15,8);c.stroke();
+  c.beginPath();c.moveTo(-20,32);c.quadraticCurveTo(-5,42,5,28);c.stroke();
+  // specular on shoulder
+  hs=c.createRadialGradient(-35,-25,1,-35,-25,16);hs.addColorStop(0,'rgba(255,255,255,.2)');hs.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=hs;c.beginPath();c.ellipse(-35,-25,14,10,0.5,0,TAU);c.fill();
+  c.restore();
+  drawLabel(c,524,230,OBN[2]);
+
+  // ── 4. Sphere (hyper-realistic 3D) ──
+  c.save();c.translate(694,295);
+  const SR=52;
+  // Base sphere with Phong
+  ga=c.createRadialGradient(-18,-18,3,0,5,SR);
+  ga.addColorStop(0,kc(M[3],2.2));ga.addColorStop(.25,kc(M[3],1.4));ga.addColorStop(.6,kc(M[3],.6));ga.addColorStop(.85,kc(M[3],.2));ga.addColorStop(1,kc(M[3],.05));
+  c.fillStyle=ga;c.beginPath();c.arc(0,0,SR,0,TAU);c.fill();
+  // Specular highlight (window reflection)
+  let gw=c.createRadialGradient(-16,-20,2,-16,-20,16);
+  gw.addColorStop(0,'rgba(255,255,255,.55)');gw.addColorStop(.5,'rgba(255,255,255,.15)');gw.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=gw;c.beginPath();c.ellipse(-16,-20,14,9,.5,0,TAU);c.fill();
+  // Fresnel rim
+  c.strokeStyle=`rgba(${lc},.2)`;c.lineWidth=2;c.beginPath();c.arc(0,0,SR-.5,0.3,2.8);c.stroke();
+  // Floor reflection
+  c.save();c.translate(0,SR+6);c.scale(1,.18);c.globalAlpha=.15;
+  ga=c.createRadialGradient(0,0,0,0,0,SR);ga.addColorStop(0,kc(M[3],1));ga.addColorStop(1,kc(M[3],0));
+  c.fillStyle=ga;c.beginPath();c.arc(0,0,SR,0,TAU);c.fill();c.restore();
+  c.restore();
+  drawLabel(c,694,238,OBN[3]);
+}
+
+function r1(v){
+  const M=mix(v);
+  let cards=M.map((m,i)=>{
+    const col=kc(m,1);const name=nm(m);
+    return`<div class="data-card"><span class="color-swatch" style="background:${col}"></span><div class="data-val" style="font-size:16px">${name}</div><div class="data-lbl">${OBN[i]}</div></div>`}).join('');
+  return`<div class="dashboard-grid">${cards}</div><div class="explanation">Cada objeto refleja las longitudes de onda de su propio color y absorbe las demás. Bajo luz <b>${['blanca','roja','verde','azul'][v.L]}</b>, los objetos que no contienen ese componente se ven <b>negros</b>.</div>`}
+
+/* ══════════════════════════════════════
+   STATION 2: PRISMA (DISPERSIÓN)
+   ══════════════════════════════════════ */
+const MT=[[1.333,.02],[1.52,.035],[1.62,.06]],P1=[300,196],P2=[420,196];
+const rt=(v,l)=>{const[n0,d]=MT[v.m],n=n0+d*((550/l)**2-1),s=n*sin((60-as(sin(v.a*R)/n)/R)*R);return s>1?null:{n,g:30-as(s)/R}};
+const ex=g=>[P2[0]+430*cos(g*R),P2[1]-430*sin(g*R)];
+
+function d2(c,v,t){
+  bgDark(c);grid(c);
+  const a=v.a-30,dx=cos(a*R),dy=-sin(a*R);
+
+  // ── Optical bench ──
+  let g=c.createLinearGradient(0,300,0,316);g.addColorStop(0,'#4a5563');g.addColorStop(1,'#1a212b');
+  c.fillStyle=g;c.fillRect(195,300,350,14);
+  c.fillStyle='rgba(255,255,255,.08)';c.fillRect(195,300,350,2);
+
+  // ── Prism body (glass 3D) ──
+  // Back face (darker)
+  c.fillStyle='rgba(140,180,220,.06)';c.beginPath();c.moveTo(280,280);c.lineTo(400,72);c.lineTo(520,280);c.closePath();c.fill();
+  // Edges (3D depth)
+  c.strokeStyle='rgba(180,210,240,.18)';c.lineWidth=1;
+  c.beginPath();c.moveTo(240,300);c.lineTo(280,280);c.stroke();
+  c.beginPath();c.moveTo(360,92);c.lineTo(400,72);c.stroke();
+  c.beginPath();c.moveTo(480,300);c.lineTo(520,280);c.stroke();
+  // Front face
+  g=c.createLinearGradient(240,300,420,92);
+  g.addColorStop(0,'rgba(160,200,240,.18)');g.addColorStop(.3,'rgba(180,215,245,.08)');g.addColorStop(.7,'rgba(160,200,240,.12)');g.addColorStop(1,'rgba(200,225,250,.2)');
+  c.fillStyle=g;c.beginPath();c.moveTo(240,300);c.lineTo(360,92);c.lineTo(480,300);c.closePath();c.fill();
+  // Front face edges
+  c.strokeStyle='rgba(200,225,250,.5)';c.lineWidth=1.8;
+  c.beginPath();c.moveTo(240,300);c.lineTo(360,92);c.lineTo(480,300);c.closePath();c.stroke();
+  // Specular edge highlight
+  c.strokeStyle='rgba(255,255,255,.35)';c.lineWidth=1;c.beginPath();c.moveTo(244,296);c.lineTo(360,96);c.stroke();
+  // Internal Fresnel
+  g=c.createLinearGradient(240,300,360,92);g.addColorStop(0,'rgba(255,255,255,.12)');g.addColorStop(.4,'rgba(255,255,255,0)');
+  c.fillStyle=g;c.beginPath();c.moveTo(240,300);c.lineTo(360,92);c.lineTo(300,196);c.closePath();c.fill();
+
+  // ── Beams ──
+  beam(c,[[P1[0]-300*dx,P1[1]-300*dy],P1],'255,255,255',2.4);
+  // Rainbow spectrum
+  for(let l=390;l<=720;l+=8){const r=rt(v,l);if(!r)continue;const k=rgb(l).join();
+    beam(c,[P1,P2],k,.6,.2);beam(c,[P2,ex(r.g)],k,.9,.65)}
+  // Selected wavelength beam (bright)
+  const rr=rt(v,v.l);
+  if(rr){beam(c,[P1,P2],rgb(v.l).join(),1.2,.4);beam(c,[P2,ex(rr.g)],rgb(v.l).join(),2.8)}
+
+  // ── Angle annotations ──
+  // Normal at entry face
+  c.save();c.setLineDash([4,4]);c.strokeStyle='rgba(200,220,255,.25)';c.lineWidth=1;
+  const nx=-cos(30*R),ny=sin(30*R);
+  c.beginPath();c.moveTo(P1[0]-50*ny,P1[1]-50*nx);c.lineTo(P1[0]+80*ny,P1[1]+80*nx);c.stroke();c.setLineDash([]);c.restore();
+  drawAngle(c,P1[0],P1[1],30,30,v.a,`${v.a}°`);
+
+  // ── Prism apex glow ──
+  drawGlow(c,360,92,20,'180,210,240',t,.15);
+}
+
+function r2(v){
+  const r=rt(v,v.l),a7=rt(v,700),b4=rt(v,400);
+  if(!r)return`<div class="dashboard-grid"><div class="data-card"><div class="data-val" style="font-size:14px;color:var(--no)">TIR</div><div class="data-lbl">Reflexión total</div></div></div><div class="explanation">Esta longitud de onda no sale del prisma. <b>Reduce el ángulo de incidencia.</b></div>`;
+  const f=(299792/v.l).toFixed(0),E=(1239.84/v.l).toFixed(2),dev=(v.a-30-r.g).toFixed(1);
+  const col=rgb(v.l);
+  let disp='';if(a7&&b4)disp=`<br>Dispersión: el violeta se desvía <b>${(a7.g-b4.g).toFixed(1)}°</b> más que el rojo. Cada color tiene distinto índice de refracción.`;
+  return`<div class="dashboard-grid">
+<div class="data-card"><div class="data-icon"><span class="color-swatch" style="background:rgb(${col})"></span></div><div class="data-val">${v.l}<span class="data-unit">nm</span></div><div class="data-lbl">Longitud de onda</div></div>
+<div class="data-card"><div class="data-val">${f}<span class="data-unit">THz</span></div><div class="data-lbl">Frecuencia</div></div>
+<div class="data-card"><div class="data-val">${E}<span class="data-unit">eV</span></div><div class="data-lbl">Energía</div></div>
+<div class="data-card"><div class="data-val">${r.n.toFixed(3)}</div><div class="data-lbl">Índice n</div></div>
+<div class="data-card"><div class="data-val">${dev}<span class="data-unit">°</span></div><div class="data-lbl">Desviación</div></div>
+</div><div class="explanation">La ley de Snell gobierna la refracción en cada cara del prisma.${disp}</div>`}
+
+/* ══════════════════════════════════════
+   STATION 3: POLARIZACIÓN
+   ══════════════════════════════════════ */
+function d3(c,v,t){
+  bgDark(c);grid(c);bench3D(c,380);
+  const th=v.t*R,B=+v.B,y=250;
+  const i1=1, i2=B?.5*cos(th)**2:.5, i3Filt=B?i2*sin(th)**2:0;
+  const al=I=>I>.0005?.08+.92*sqrt(I):0;
+
+  // ── Beams ──
+  const bm=(a,b,I)=>{if(I>.0005)beam(c,[[a,y],[b,y]],'255,244,225',4.5,al(I))};
+  bm(84,270,1);bm(270,B?450:640,.5);if(B)bm(450,640,i2);bm(640,710,i3Filt);
+
+  // ── Lamp ──
+  let g=c.createLinearGradient(0,232,0,268);g.addColorStop(0,'#3a424e');g.addColorStop(1,'#1a1f28');
+  c.fillStyle=g;c.fillRect(30,232,54,36);
+  c.strokeStyle='rgba(255,255,255,.1)';c.lineWidth=1;c.strokeRect(30,232,54,36);
+  drawGlow(c,84,250,28,'255,244,225',t,.7);
+
+  // ── Filter drawing function ──
+  const drawFilter=(x,ang,label,active,intensity)=>{
+    c.save();c.globalAlpha=active?1:.2;
+    // Disc
+    g=c.createLinearGradient(x-18,0,x+18,0);
+    g.addColorStop(0,'rgba(80,110,150,.45)');g.addColorStop(.5,'rgba(140,170,200,.2)');g.addColorStop(1,'rgba(60,90,130,.5)');
+    c.fillStyle=g;c.beginPath();c.ellipse(x,y,17,98,0,0,TAU);c.fill();
+    // Glass highlight
+    c.fillStyle='rgba(255,255,255,.06)';c.beginPath();c.ellipse(x-5,y-15,6,65,0,0,TAU);c.fill();
+    // Rim
+    c.strokeStyle='rgba(160,185,210,.6)';c.lineWidth=4;c.beginPath();c.ellipse(x,y,17,98,0,0,TAU);c.stroke();
+    c.strokeStyle='rgba(255,255,255,.15)';c.lineWidth=1;c.beginPath();c.ellipse(x,y,15,94,0,0,TAU);c.stroke();
+    // Polarization lines
+    c.strokeStyle=`rgba(200,220,255,${active?.25:.1})`;c.lineWidth=.8;
+    for(let i=-80;i<=80;i+=8){
+      const rx=i*sin(ang*R),ry=i*cos(ang*R);
+      if(abs(rx)<15&&abs(ry)<96){c.beginPath();c.moveTo(x+rx-40*cos(ang*R),y+ry+40*sin(ang*R));c.lineTo(x+rx+40*cos(ang*R),y+ry-40*sin(ang*R));c.stroke()}}
+    // Rotation dial
+    c.strokeStyle='rgba(160,185,210,.5)';c.lineWidth=1.5;c.beginPath();c.arc(x,80,22,0,TAU);c.stroke();
+    c.lineWidth=2.5;c.beginPath();c.moveTo(x-20*sin(ang*R),80+20*cos(ang*R));c.lineTo(x+20*sin(ang*R),80-20*cos(ang*R));c.stroke();
+    // Label
+    c.fillStyle='rgba(180,200,220,.7)';c.font='600 13px "Space Grotesk",sans-serif';c.textAlign='center';
+    c.fillText(`${label} · ${ang}°`,x,128);
+    // Intensity indicator
+    if(active){c.fillStyle=`rgba(255,244,225,${al(intensity)*.7})`;c.font='bold 11px "JetBrains Mono",monospace';
+      c.fillText(`${(intensity*100).toFixed(0)}%`,x,y+112)}
+    c.restore()};
+
+  drawFilter(270,0,'A',1,1);
+  drawFilter(450,v.t,'B',B,.5*cos(th)**2);
+  drawFilter(640,90,'C',1,i3Filt);
+
+  // ── Screen ──
+  c.fillStyle='#cfd5dd';c.fillRect(706,152,10,196);
+  c.strokeStyle='rgba(255,255,255,.1)';c.lineWidth=1;c.strokeRect(706,152,10,196);
+  g=c.createRadialGradient(711,250,3,711,250,80);
+  g.addColorStop(0,`rgba(255,244,225,${al(i3Filt)*.8})`);g.addColorStop(1,'rgba(255,244,225,0)');
+  c.fillStyle=g;c.fillRect(620,160,180,180);
+}
+
+function r3(v){
+  const I=+v.B?sin(2*v.t*R)**2/8:0;
+  return`<div class="dashboard-grid">
+<div class="data-card"><div class="data-val">${(I*100).toFixed(1)}<span class="data-unit">%</span></div><div class="data-lbl">Intensidad</div></div>
+<div class="data-card"><div class="data-val">${v.t}<span class="data-unit">°</span></div><div class="data-lbl">Ángulo B</div></div>
+<div class="data-card"><div class="data-val">${+v.B?'Sí':'No'}</div><div class="data-lbl">Filtro B</div></div>
+</div><div class="explanation">${+v.B?`El filtro A deja pasar la mitad. Con B a <b>${v.t}°</b>, I = I₀/8 · sen²(2θ). Máximo <b>12.5%</b> a 45°.`:'Los filtros A (0°) y C (90°) están cruzados: <b>no pasa luz</b>. Inserta el filtro B y gíralo.'}</div>`}
+
+/* ══════════════════════════════════════
+   STATION 4: REFRACCIÓN (LEY DE SNELL)
+   ══════════════════════════════════════ */
+const NM=[1.333,1.47,1.52,2.42],
+      NMN=['Agua','Aceite','Vidrio','Diamante'],
+      TC=[[90,170,225],[215,175,60],[150,205,190],[215,228,245]];
+
+function d4(c,v,t){
+  bgDark(c);grid(c);
+  const n=NM[v.m],O=[400,220],a=v.a*R,L=170,tc=TC[v.m].join(),
+        pt=(an,s)=>[O[0]+L*sin(an),O[1]+s*L*cos(an)],col='255,250,235';
+
+  // ── Container (3D glass) ──
+  c.strokeStyle='rgba(200,220,240,.3)';c.lineWidth=3;c.strokeRect(160,70,480,330);
+  c.strokeStyle='rgba(255,255,255,.1)';c.lineWidth=1;c.strokeRect(163,73,474,324);
+  // Medium fill
+  let g=c.createLinearGradient(0,220,0,400);g.addColorStop(0,`rgba(${tc},.3)`);g.addColorStop(1,`rgba(${tc},.5)`);
+  c.fillStyle=g;c.fillRect(163,220,474,177);
+  // Surface highlight
+  c.fillStyle='rgba(255,255,255,.4)';c.fillRect(163,219,474,2);
+  g=c.createLinearGradient(0,221,0,248);g.addColorStop(0,'rgba(255,255,255,.15)');g.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=g;c.fillRect(163,221,474,28);
+  // Animated surface ripples
+  c.save();c.strokeStyle='rgba(255,255,255,.08)';c.lineWidth=1;
+  for(let i=0;i<3;i++){c.beginPath();
+    for(let x=163;x<=637;x+=2){c.lineTo(x,219+sin((x*.02+t*1.5+i*2))*2)}c.stroke()}c.restore();
+  // Glass wall reflections
+  c.fillStyle='rgba(255,255,255,.04)';c.fillRect(163,73,12,324);c.fillRect(625,73,12,324);
+
+  bench3D(c,400);
+
+  // ── Normal line ──
+  c.setLineDash([5,5]);c.strokeStyle='rgba(200,220,255,.35)';c.lineWidth=1.2;
+  c.beginPath();c.moveTo(400,80);c.lineTo(400,395);c.stroke();c.setLineDash([]);
+
+  // ── Rays ──
+  if(!v.d){
+    beam(c,[pt(-a,-1),O],col,2.4);
+    beam(c,[O,pt(as(sin(a)/n),1)],col,2.4);
+    beam(c,[O,pt(a,-1)],col,1.5,.15);
+    // Angle arcs
+    drawAngle(c,O[0],O[1],34,90-v.a,90,`${v.a}°`,'rgba(255,200,100,.7)');
+    const refA=(as(sin(a)/n)/R);
+    drawAngle(c,O[0],O[1],34,270,270+refA,`${refA.toFixed(1)}°`,'rgba(100,200,255,.7)');
+  } else {
+    const s=n*sin(a);
+    beam(c,[pt(-a,1),O],col,2.4);
+    if(s<1){beam(c,[O,pt(as(s),-1)],col,2.4);
+      drawAngle(c,O[0],O[1],34,90,90+(as(s)/R),`${(as(s)/R).toFixed(1)}°`,'rgba(100,200,255,.7)');}
+    beam(c,[O,pt(a,1)],col,1.5,s<1?.15:1);
+    drawAngle(c,O[0],O[1],34,270-v.a,270,`${v.a}°`,'rgba(255,200,100,.7)');
+  }
+  // ── Medium label ──
+  drawLabel(c,400,360,`${NMN[v.m]} · n = ${n}`,'rgba(200,220,255,.7)');
+}
+
+function r4(v){
+  const n=NM[v.m],a=v.a*R,cr=(as(1/n)/R).toFixed(1);
+  let tVal,tir=0;
+  if(!v.d)tVal=as(sin(a)/n)/R;
+  else{const s=n*sin(a);s>=1?tir=1:tVal=as(s)/R}
+  return`<div class="dashboard-grid">
+<div class="data-card"><div class="data-val">${n}</div><div class="data-lbl">Índice n</div></div>
+<div class="data-card"><div class="data-val">${(299792/n).toFixed(0)}<span class="data-unit">km/s</span></div><div class="data-lbl">v en medio</div></div>
+<div class="data-card"><div class="data-val">${v.a}<span class="data-unit">°</span></div><div class="data-lbl">θ₁ incidencia</div></div>
+<div class="data-card"><div class="data-val">${tir?'TIR':tVal.toFixed(1)+'°'}</div><div class="data-lbl">${tir?'Reflexión total':'θ₂ refracción'}</div></div>
+<div class="data-card"><div class="data-val">${cr}<span class="data-unit">°</span></div><div class="data-lbl">Ángulo crítico</div></div>
+</div><div class="explanation">${tir?`<b>Reflexión total interna</b>: θ₁ = ${v.a}° > ángulo crítico (${cr}°). Toda la luz regresa al medio. Así viaja la luz en una <b>fibra óptica</b>.`:`Ley de Snell: n₁·sen(θ₁) = n₂·sen(θ₂). El rayo se desvía al cambiar de medio.`}</div>`}
+
+/* ══════════════════════════════════════
+   STATION 5: INTERFERENCIA (YOUNG)
+   ══════════════════════════════════════ */
+function d5(c,v,t){
+  bgDark(c);grid(c);
+  const l=v.l,d=v.d,Lm=v.L,y0=220,sp=d*300,k=rgb(l).join(),st=l/30,
+        ph=y=>Math.PI*d*y*1e3/(l*Lm),
+        I=y=>{const e=ph(y)*.04/d;return cos(ph(y))**2*(e?(sin(e)/e)**2:1)};
+
+  // ── Wavefronts (animated) ──
+  c.save();c.globalCompositeOperation='lighter';
+  // Incoming plane waves
+  c.strokeStyle=`rgba(${k},.2)`;c.lineWidth=1;
+  for(let x=250-st-((t*40)%st);x>20;x-=st){c.beginPath();c.moveTo(x,70);c.lineTo(x,370);c.stroke()}
+  // Circular waves from slits (animated)
+  c.beginPath();c.rect(256,0,310,440);c.clip();
+  c.strokeStyle=`rgba(${k},.15)`;c.lineWidth=1;
+  const waveOffset=(t*40)%st;
+  for(const s of[-1,1])for(let r=st-waveOffset;r<340;r+=st){
+    c.beginPath();c.arc(252,y0+s*sp/2,r,-1.4,1.4);c.stroke()}
+  c.restore();
+
+  // ── Barrier with slits (3D) ──
+  const bx=244,bw=16;
+  let g=c.createLinearGradient(bx,0,bx+bw,0);
+  g.addColorStop(0,'#2a3342');g.addColorStop(.5,'#3d4a5c');g.addColorStop(1,'#1e2530');
+  c.fillStyle=g;
+  [[40,y0-sp/2-4],[y0-sp/2+4,y0+sp/2-4],[y0+sp/2+4,400]].forEach(([a,b])=>{
+    c.fillRect(bx,a,bw,b-a);c.strokeStyle='rgba(255,255,255,.1)';c.lineWidth=1;c.strokeRect(bx,a,bw,b-a)});
+  // Slit glow
+  for(const s of[-1,1]){drawGlow(c,252,y0+s*sp/2,12,k,t,.4)}
+
+  // ── Screen with interference pattern ──
+  c.strokeStyle='rgba(200,220,240,.3)';c.lineWidth=3;
+  c.beginPath();c.moveTo(562,40);c.lineTo(562,400);c.stroke();
+  c.beginPath();c.moveTo(562,40);c.lineTo(600,40);c.lineTo(600,400);c.lineTo(562,400);c.stroke();
+
+  // Pattern on screen
+  for(let y=41;y<400;y++){const i=I((y-y0)/9);
+    c.fillStyle=`rgb(${rgb(l).map(x=>Math.round(x*i))})`;c.fillRect(563,y,36,1)}
+
+  // ── Intensity graph ──
+  c.strokeStyle=`rgba(${k},.9)`;c.lineWidth=1.8;c.beginPath();
+  for(let y=41;y<400;y++){const i=I((y-y0)/9);c.lineTo(615+i*150,y)}c.stroke();
+  // Graph axis
+  c.strokeStyle='rgba(200,220,255,.2)';c.lineWidth=1;
+  c.beginPath();c.moveTo(615,40);c.lineTo(615,400);c.stroke();
+  c.beginPath();c.moveTo(615,y0);c.lineTo(770,y0);c.stroke();
+
+  // ── Labels ──
+  drawLabel(c,252,28,'Rendijas','rgba(200,220,255,.7)');
+  drawLabel(c,580,28,'Pantalla','rgba(200,220,255,.7)');
+  drawLabel(c,710,28,'I(y)','rgba(200,220,255,.7)');
+}
+
+function r5(v){
+  const dy=(v.l*v.L/v.d/1000).toFixed(2);
+  return`<div class="dashboard-grid">
+<div class="data-card"><div class="data-icon"><span class="color-swatch" style="background:rgb(${rgb(v.l)})"></span></div><div class="data-val">${v.l}<span class="data-unit">nm</span></div><div class="data-lbl">Longitud de onda</div></div>
+<div class="data-card"><div class="data-val">${v.d}<span class="data-unit">mm</span></div><div class="data-lbl">Separación d</div></div>
+<div class="data-card"><div class="data-val">${v.L}<span class="data-unit">m</span></div><div class="data-lbl">Distancia L</div></div>
+<div class="data-card"><div class="data-val">${dy}<span class="data-unit">mm</span></div><div class="data-lbl">Δy franjas</div></div>
+</div><div class="explanation">Δy = λ·L/d. Luz roja → franjas más separadas. Rendijas más juntas (d↓) o pantalla más lejos (L↑) → más separación.</div>`}
+
+/* ══════════════════════════════════════
+   STATION & QUIZ DEFINITIONS
+   ══════════════════════════════════════ */
+const ICONS={
+  Color:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M12 2a10 10 0 0 0 0 20"/><circle cx="12" cy="12" r="3"/></svg>`,
+  Prisma:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 22h20L12 2z"/></svg>`,
+  'Polarización':`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="12" y1="3" x2="12" y2="21"/></svg>`,
+  'Refracción':`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="12" x2="20" y2="16"/><line x1="2" y1="12" x2="22" y2="12" stroke-dasharray="3 3"/></svg>`,
+  Interferencia:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M2 16c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity=".5"/></svg>`,
+  'Reto final':`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"/></svg>`
+};
+
+const S=[
+{n:'Color',t:'Cambia la luz que ilumina la escena y observa cómo cambia el color de cada objeto. <b>Pregunta guía</b>: ¿por qué una camisa se ve roja bajo luz blanca pero negra bajo luz azul?',
+ c:[{k:'L',t:'Luz que ilumina',o:['Blanca','Roja','Verde','Azul'],v:0}],d:d1,r:r1},
+{n:'Prisma',t:'Un rayo de luz blanca atraviesa un prisma y se separa en colores. Cambia el ángulo, el material y selecciona un color para ver sus propiedades. <b>Pregunta guía</b>: ¿cómo se separa la luz blanca?',
+ c:[{k:'a',t:'Ángulo incidencia',a:40,b:75,v:50,u:'°'},{k:'l',t:'Color a seguir',a:380,b:750,s:5,v:550,u:' nm',spectral:1},{k:'m',t:'Material del prisma',o:['Agua','Vidrio crown','Vidrio flint'],v:2}],d:d2,r:r2},
+{n:'Polarización',t:'Con los filtros A y C cruzados (0° y 90°) no pasa luz. Inserta el filtro B entre ambos y gíralo. <b>Pregunta guía</b>: ¿qué le hace un filtro polarizador a la luz?',
+ c:[{k:'B',t:'Filtro intermedio B',o:['Retirado','Insertado'],v:0},{k:'t',t:'Orientación de B',a:0,b:90,v:45,u:'°'}],d:d3,r:r3},
+{n:'Refracción',t:'Cambia el medio, el ángulo y la dirección del rayo. Sube el ángulo hasta que desaparezca el rayo refractado. <b>Pregunta guía</b>: ¿por qué un lápiz parece doblado dentro del agua?',
+ c:[{k:'m',t:'Medio',o:['Agua','Aceite','Vidrio','Diamante'],v:0},{k:'d',t:'Rayo viene desde',o:['El aire','El medio'],v:0},{k:'a',t:'Ángulo incidencia',a:0,b:85,v:35,u:'°'}],d:d4,r:r4},
+{n:'Interferencia',t:'Cambia el color, la separación de las rendijas y la distancia a la pantalla. Observa las franjas. <b>Pregunta guía</b>: ¿qué ocurre cuando dos ondas de luz se superponen?',
+ c:[{k:'l',t:'Longitud de onda',a:380,b:750,v:550,u:' nm',spectral:1},{k:'d',t:'Separación rendijas',a:.1,b:.5,s:.01,v:.3,u:' mm'},{k:'L',t:'Distancia pantalla',a:1,b:3,s:.1,v:2,u:' m'}],d:d5,r:r5}];
+
+const Q=[
+['¿Qué es la luz dentro del espectro electromagnético?',['La franja de radiación que el ojo humano puede percibir','Una onda de sonido muy rápida','Solo la radiación ultravioleta'],0,'Es la parte visible del espectro electromagnético (estación Prisma).'],
+['¿Cuál es el rango aproximado de longitud de onda de la luz visible?',['10 a 100 nm','1,000 a 2,000 nm','380 a 750 nm'],2,'Recorre el deslizador de color en la estación Prisma para comprobarlo.'],
+['¿Cuál es la velocidad aproximada de la luz en el vacío?',['150,000 km/s','300,000 km/s','30,000 km/s'],1,'Cerca de 300,000 km/s; en otros medios es menor (estación Refracción).'],
+['¿Qué color visible tiene la longitud de onda más larga?',['Rojo','Verde','Violeta'],0,'El rojo (~700 nm) tiene las más largas; el violeta (~380 nm) las más cortas.'],
+['¿Qué fenómeno hace que un lápiz parezca doblado dentro del agua?',['Reflexión','Dispersión','Refracción'],2,'La luz cambia de velocidad y dirección al pasar del agua al aire.'],
+['¿Cómo se llama la separación de la luz blanca en sus colores?',['Absorción','Dispersión','Polarización'],1,'Cada color se desvía distinto en el prisma por su diferente índice n.'],
+['Una camisa se ve roja porque:',['Absorbe el rojo y refleja los demás','Emite luz roja propia','Refleja el rojo y absorbe los demás'],2,'Pruébalo con luz azul en la estación Color: la camisa se ve negra.'],
+['Cuando dos ondas de luz se superponen:',['Se refuerzan o anulan formando franjas claras y oscuras','Siempre se suman','Siempre desaparecen'],0,'Es el fenómeno de interferencia (estación Interferencia).']];
+
+/* ══════════════════════════════════════
+   UI BUILDER
+   ══════════════════════════════════════ */
+const nav=$('#nav'),M=$('#m'),D={},A=[];
+let activeIdx=0, animTime=0, canvases=[];
+
+function go(i){
+  activeIdx=i;
+  [...nav.children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  [...M.children].forEach((s,j)=>{s.hidden=j!==i;if(j===i)s.classList.add('station-in')})}
+
+// ── Build nav tabs ──
+[...S.map(s=>s.n),'Reto final'].forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.innerHTML=(ICONS[t]||'')+`<span>${t}</span>`;
+  b.onclick=()=>go(i);nav.append(b)});
+
+// ── Build stations ──
+S.forEach((s,si)=>{
+  const v={},sec=document.createElement('section');sec.hidden=si!==0;
+  sec.innerHTML=`
+<div class="card">
+  <div class="station-desc">${s.t}</div>
+  <div class="canvas-wrap"><canvas width="1600" height="880"></canvas></div>
+  <div class="station-body">
+    <div class="controls-panel"></div>
+    <div class="dashboard-panel"><div class="ro"></div></div>
+  </div>
+  <div class="obs-panel">
+    <label>📝 Observaciones del experimento</label>
+    <textarea rows="3" maxlength="900" placeholder="Describe el fenómeno que observaste y explica por qué ocurre..."></textarea>
+  </div>
+</div>`;
+
+  const cvs=sec.querySelector('canvas');
+  const ctx=cvs.getContext('2d');
+  const ct=sec.querySelector('.controls-panel');
+  const ro=sec.querySelector('.ro');
+  canvases.push({ctx,draw:()=>{ctx.setTransform(2,0,0,2,0,0);ctx.clearRect(0,0,800,440);s.d(ctx,v,animTime)},
+    update:()=>{ro.innerHTML=s.r(v)}});
+
+  const up=()=>{canvases[si].draw();canvases[si].update();
+    s.c.forEach(o=>{if(o.g)[...o.g.children].forEach((b,j)=>b.classList.toggle('on',v[o.k]===j));
+      else o.z.textContent=v[o.k]+(o.u||'')})};
+
+  s.c.forEach(o=>{v[o.k]=o.v;const grp=document.createElement('div');grp.className='control-group';
+    if(o.o){grp.innerHTML=`<div class="control-label">${o.t}</div>`;
+      const sg=document.createElement('div');sg.className='seg';
+      o.o.forEach((x,j)=>{const b=document.createElement('button');b.textContent=x;b.onclick=()=>{v[o.k]=j;up()};sg.append(b)});
+      grp.append(sg);o.g=sg}
+    else{grp.innerHTML=`<div class="control-label"><span>${o.t}</span><span class="control-value"></span></div>
+      <input type="range" min="${o.a}" max="${o.b}" step="${o.s||1}" value="${o.v}"${o.spectral?' class="spectral"':''}>`;
+      grp.querySelector('input').oninput=e=>{v[o.k]=+e.target.value;up()};o.z=grp.querySelector('.control-value')}
+    ct.append(grp)});
+
+  sec.querySelector('textarea').oninput=e=>{D[s.n]=e.target.value};
+  s._v=v;s._up=up;up();M.append(sec)});
+
+// ── Build Quiz ──
+(()=>{
+  const sec=document.createElement('section');sec.hidden=true;
+  const card=document.createElement('div');card.className='card';
+  sec.innerHTML='';
+  card.innerHTML=`<div class="station-desc">Reto final: ocho preguntas sobre lo que acabas de manipular. Cada respuesta te indica la estación donde puedes comprobarlo.</div>
+    <div class="quiz-progress">${Q.map(()=>'<div class="quiz-pip current"></div>').join('')}</div>`;
+  const pips=[...card.querySelectorAll('.quiz-pip')];
+  let ok=0,done=0;
+
+  const sc=document.createElement('div');sc.className='score-bar';
+  sc.innerHTML=`<div><div class="score-value">0<span style="font-size:16px;color:var(--mu)"> / 100</span></div><div class="score-label">Puntaje del reto</div></div>`;
+
+  Q.forEach((q,i)=>{
+    const d=document.createElement('div');d.className='qi';
+    d.innerHTML=`<div class="q-num">Pregunta ${i+1} de ${Q.length}</div><div class="q-text">${q[0]}</div><div class="seg"></div><div class="q-explain">${q[3]}</div>`;
+    q[1].forEach((o,j)=>{const b=document.createElement('button');b.textContent=o;
+      b.onclick=()=>{d.querySelectorAll('button').forEach((x,m)=>{x.disabled=1;if(m===q[2])x.className='ok'});
+        A[i]=j;if(j!==q[2])b.className='no';else ok++;
+        pips[i].className='quiz-pip '+(j===q[2]?'correct':'wrong');
+        d.querySelector('.q-explain').classList.add('show');
+        done++;
+        sc.querySelector('.score-value').innerHTML=`${(ok*100/Q.length).toFixed(1)}<span style="font-size:16px;color:var(--mu)"> / 100</span>`;
+        sc.querySelector('.score-label').textContent=`${ok} aciertos de ${Q.length}`+(done===Q.length?' · ¡Reto completado!':'');
+        if(done===Q.length&&ok>=6)launchConfetti()};
+      d.querySelector('.seg').append(b)});
+    card.append(d)});
+
+  card.append(sc);
+
+  // ── Submit section ──
+  const f=document.createElement('div');f.className='submit-section';
+  f.innerHTML=`<label>Nombre completo<input type="text" maxlength="80" placeholder="Nombre y apellido"></label>
+    <label>Grado<select><option>10mo</option><option>11mo</option></select></label>
+    <button class="btn-primary">📄 Generar y descargar PDF</button>
+    <div class="submit-msg"></div>`;
+  card.append(f);
+
+  const inp=f.querySelector('input'),sl=f.querySelector('select'),btn=f.querySelector('button'),msg=f.querySelector('.submit-msg');
+  btn.onclick=()=>{
+    const nombre=inp.value.trim();
+    if(nombre.split(/\s+/).join('').length<4){msg.textContent='⚠️ Escribe tu nombre completo.';inp.focus();return}
+    btn.disabled=1;
+    try{generatePDF(nombre,sl.value,ok,done);msg.textContent='✅ PDF generado. ¡Envíalo a tu docente!'}
+    catch(e){msg.textContent='❌ Error al generar el PDF.'}
+    btn.disabled=0};
+
+  sec.append(card);M.append(sec)})();
+
+go(0);
+
+/* ══════════════════════════════════════
+   ANIMATION LOOP
+   ══════════════════════════════════════ */
+function animate(t){
+  animTime=t*0.001;
+  const ci=canvases[activeIdx];
+  if(ci){ci.draw()}
+  requestAnimationFrame(animate)}
+requestAnimationFrame(animate);
+
+/* ══════════════════════════════════════
+   CONFETTI
+   ══════════════════════════════════════ */
+function launchConfetti(){
+  const container=document.createElement('div');container.className='confetti-container';document.body.append(container);
+  for(let i=0;i<80;i++){const p=document.createElement('div');p.className='confetti-piece';
+    p.style.cssText=`left:${Math.random()*100}%;animation-delay:${Math.random()*1.5}s;animation-duration:${2+Math.random()*2}s;
+      background:hsl(${Math.random()*360},85%,60%);width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;
+      border-radius:${Math.random()>.5?'50%':'2px'};transform:rotate(${Math.random()*360}deg)`;
+    container.append(p)}
+  setTimeout(()=>container.remove(),5000)}
+
+/* ══════════════════════════════════════
+   PDF EXPORT
+   ══════════════════════════════════════ */
+function generatePDF(nombre,grado,ok,done){
+  const puntaje=+(ok*100/Q.length).toFixed(1);
+  const fecha=new Date().toLocaleDateString('es-NI',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  let obsHtml=Object.entries(D).map(([k,v])=>`<tr><td style="padding:8px 12px;border:1px solid #ddd;font-weight:600;color:#1e40af;width:120px">${k}</td><td style="padding:8px 12px;border:1px solid #ddd">${v||'<em style="color:#999">Sin observaciones</em>'}</td></tr>`).join('');
+  if(!obsHtml)obsHtml='<tr><td colspan="2" style="padding:8px 12px;border:1px solid #ddd;color:#999">No se registraron observaciones.</td></tr>';
+  let resHtml=Q.map((q,i)=>{
+    const ans=A[i]==null?'<span style="color:#999">Sin responder</span>':A[i]===q[2]?'<span style="color:#16794a;font-weight:700">✓ Correcta</span>':'<span style="color:#b42318;font-weight:700">✗ Incorrecta</span>';
+    return`<tr><td style="padding:8px 12px;border:1px solid #ddd;vertical-align:top;width:30px;font-weight:700;color:#1e40af">${i+1}</td><td style="padding:8px 12px;border:1px solid #ddd"><strong>${q[0]}</strong><br>${ans}<br><em style="font-size:12px;color:#666">${q[3]}</em></td></tr>`}).join('');
+  const barPct=clamp(puntaje,0,100);
+  const barCol=puntaje>=75?'#16794a':puntaje>=50?'#d97706':'#b42318';
+
+  const w=window.open('','_blank','width=800,height=900');
+  if(!w){alert('Permite las ventanas emergentes para generar el PDF.');return}
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte — ${nombre}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:#1a1a1a;padding:32px 40px;max-width:800px;margin:0 auto;line-height:1.6}
+  .header{text-align:center;border-bottom:3px solid #1e40af;padding-bottom:16px;margin-bottom:24px}
+  .header h1{font-family:'Space Grotesk',sans-serif;font-size:24px;color:#1e40af;margin-bottom:4px}
+  .header .badge{display:inline-block;background:#1e40af;color:#fff;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:12px;margin-bottom:8px}
+  .header .school{color:#555;font-size:13px}
+  h2{font-family:'Space Grotesk',sans-serif;font-size:16px;color:#1e40af;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #e0e4ea}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:12px}
+  .info-grid p{font-size:14px}
+  .info-grid strong{color:#1e40af}
+  .score-bar-outer{background:#e5e7eb;border-radius:8px;height:24px;margin:8px 0 4px;overflow:hidden}
+  .score-bar-inner{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;transition:width .5s}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+  table th{background:#f0f4ff;padding:8px 12px;border:1px solid #ddd;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#1e40af}
+  .footer{text-align:center;color:#999;font-size:11px;margin-top:24px;padding-top:12px;border-top:1px solid #e0e4ea}
+  @media print{body{padding:16px 20px}}
+</style></head><body>
+<div class="header">
+  <div class="badge">🔬 STEM Lab</div>
+  <h1>Laboratorio de la Luz — Reporte</h1>
+  <div class="school">Colegio Cristiano Jesús el Buen Pastor · Física</div>
+</div>
+<h2>📋 Datos del Estudiante</h2>
+<div class="info-grid">
+  <p><strong>Nombre:</strong> ${nombre}</p>
+  <p><strong>Grado:</strong> ${grado}</p>
+  <p><strong>Puntaje:</strong> <span style="font-family:'JetBrains Mono',monospace;font-weight:700">${puntaje}</span> / 100</p>
+  <p><strong>Aciertos:</strong> ${ok} de ${Q.length}</p>
+</div>
+<div class="score-bar-outer"><div class="score-bar-inner" style="width:${barPct}%;background:${barCol}">${puntaje}%</div></div>
+<h2>🔬 Observaciones de los Experimentos</h2>
+<table><thead><tr><th>Estación</th><th>Observación</th></tr></thead><tbody>${obsHtml}</tbody></table>
+<h2>✏️ Respuestas del Reto Final</h2>
+<table><thead><tr><th style="width:30px">#</th><th>Pregunta y Resultado</th></tr></thead><tbody>${resHtml}</tbody></table>
+<div class="footer">Generado automáticamente · ${fecha} · Laboratorio Virtual NICAMATE<br>Imprime esta página como PDF (Ctrl+P → Guardar como PDF)</div>
+</body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),600)}
+</script>
+</body>
+</html>
